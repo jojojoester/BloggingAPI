@@ -8,7 +8,7 @@ MONGODB_URL = os.getenv("MONGODB_URL")
 
 client = AsyncIOMotorClient(MONGODB_URL)
 #database
-db = client["Blog"]
+db = client["blog"]
 #collections
 users_collection = db["users"]
 posts_collection = db["posts"]
