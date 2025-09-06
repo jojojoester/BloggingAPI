@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, HTTPException, APIRouter
 from typing import Optional
-from app.models import RegisterUser, UserInDB
-from app.database import users_collection
+from models import RegisterUser, UserInDB
+from database import users_collection
 # from main import app
 from passlib.context import CryptContext
 router = APIRouter(tags = ["Users"])
@@ -23,6 +23,11 @@ async def register_user(register: RegisterUser):
     user_dict["password"] = hashed_password
     await users_collection.insert_one(user_dict)
 
-    return {"message": "User registered successfully"}
+    return UserInDB(
+    first_name=user_dict["first_name"],
+    last_name=user_dict["last_name"],
+    username=user_dict["username"]
+)
+
 
 #Creating login_user endpoints

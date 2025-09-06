@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import users
+from routers import users
 # FastAPI app
 app = FastAPI(
     title="Blogging API",
