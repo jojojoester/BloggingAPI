@@ -6,6 +6,10 @@ from fastapi import HTTPException, status
 #     access_token = str
 #     token_token = str
 
+class TokenData(BaseModel):
+    email : str
+
+
 class RegisterUser(BaseModel):
     first_name : str
     last_name : str
@@ -47,3 +51,8 @@ class UserInDB(BaseModel):
                 "username": "jojo"
             }
         }
+
+
+class UserLogin(BaseModel):
+    phone_number : str
+    password : str
