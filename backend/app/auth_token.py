@@ -1,51 +1,38 @@
-from fastapi import FastAPI, HTTPException, status, Depends
-import os
-from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
-from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+import os
 from models import TokenData
 
-#Declaring three crucial things: secretkety, algorithm and token expire minutes.
-SECRET_KEY = os.getenv("secret_key")
-ACCESS_TOKEN_EXPIRE_MINUTES = 10
+# SECRET_KEY = os.getenv("secret_key")
+SECRET_KEY = ("bd327066056b0334b59c80f52ca26443a7a3e2e486bf21c27105e4ff7ff6934f")
 ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 10
 
+api_key_header = APIKeyHeader(name="Authorization", auto_error=True)
 
-pwd_context = CryptContext(schemes = "bcrypt", deprecated = "auto")
-
-oauth2_scheme = APIKeyHeader(name = "Authorization")
-
-async def create_token(data:dict):
+async def create_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"expire": expire})
-    encoded_jwt = jwt.encode(to_encode , SECRET_KEY ,algorithm = ALGORITHM)
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-async def  get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(api_key_header)):
     if not token.startswith("Bearer "):
-        raise HTTPException(status_code = 401, detail = "Invalid Authorization header.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Authorization header. Must start with 'Bearer '",
+        )
     token = token.split(" ")[1]
 
-    credentials_exception = HTTPException(
-        status_code = status.HTTP_401_UNAUTHORIZED,
-        detail = "Could not validate credentials",
-        header = {"WWW-Authenticate": "Bearer"},
-    )
-
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms = ALGORITHM)
-        email : str = payload.get("email")
-        if email is None:
-            raise credentials_exception
-        token_data = TokenData(email = email)
-
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        phone_number: str = payload.get("phone_number")
+        if phone_number is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        return TokenData(phone_number=phone_number)
     except JWTError:
-        raise credentials_exception
-    
-    return token_data
-
-
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

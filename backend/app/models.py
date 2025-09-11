@@ -7,7 +7,12 @@ from fastapi import HTTPException, status
 #     token_token = str
 
 class TokenData(BaseModel):
-    email : str
+    phone_number : str
+
+
+class Token(BaseModel):
+    access_token : str
+    token_type : str
 
 
 class RegisterUser(BaseModel):
@@ -37,20 +42,32 @@ class RegisterUser(BaseModel):
         return v
 
 
+class UserOut(BaseModel):
+    first_name : str
+    last_name : str
+    username : str
+
 
 class UserInDB(BaseModel):
     first_name : str
     last_name : str
     username : str
-    
+    phone_number : str = Field(..., min_length = 10)
+    password : str
+    confirm_password : str
+
     class Config:
-        scheme_extra = {
-            "examples": {
+        schema_extra = {
+            "example": {
                 "first_name": "Aashish",
                 "last_name": "Rokka",
-                "username": "jojo"
+                "username": "jojo",
+                "phone_number": "9849502928",
+                "password": "jojo123",
+                "confirm_password": "jojo123"
             }
         }
+
 
 
 class UserLogin(BaseModel):
