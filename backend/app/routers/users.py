@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from passlib.context import CryptContext
+from pymongo import ReturnDocument
 from database import users_collection
 from models import RegisterUser, UserOut, UserInDB, UserLogin, Token, TokenData
 from auth_token import create_token, get_current_user, APIKeyHeader
@@ -8,7 +9,7 @@ router = APIRouter(tags=["Users"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Register
+
 @router.post("/register-user/", response_model=UserOut)
 async def register_user(register: RegisterUser):
     if await users_collection.find_one({"username": register.username}):
@@ -22,9 +23,14 @@ async def register_user(register: RegisterUser):
             detail="Phone number already registered. Try logging in."
         )
 
+    # Hash both password and confirm_password
     hashed_password = pwd_context.hash(register.password)
+    hashed_confirm_password = pwd_context.hash(register.confirm_password)
+
     user_dict = register.dict()
     user_dict["password"] = hashed_password
+    user_dict["confirm_password"] = hashed_confirm_password
+
     await users_collection.insert_one(user_dict)
 
     return UserOut(
@@ -32,6 +38,7 @@ async def register_user(register: RegisterUser):
         last_name=user_dict["last_name"],
         username=user_dict["username"]
     )
+
 
 # Login
 @router.post("/login-users/", response_model=Token)
@@ -85,7 +92,7 @@ async def protected_route(current_user: TokenData = Depends(get_current_user)):
         phone_number=user["phone_number"]
     )
 
-
+# #router to update the existing user
 # @router.put("/update-user/{phone_number}", response_model = UserInDB, tags = ["Users"])
 # async def update_user(phone_number: str, edituser: UserInDB):
 #     if await users_collection.find_one({"phone_number": edituser.phone_number}):
@@ -93,9 +100,12 @@ async def protected_route(current_user: TokenData = Depends(get_current_user)):
 #             status_code = status.HTTP_409_CONFLICT,
 #             detail = "Phone number not registered. Try using valid phone numbers."
 #         )
-#     updated_user = await users_collection.find_one_and_update{}
+#     updated_user = await users_collection.find_one_and_update{
 
-#route to delete the existing user
+#     }
+
+
+#router to delete the existing user
 @router.delete("/delete_user/{phone_number}", tags = ["Users"])
 async def delete_user(phone_number : str):
     user = await users_collection.delete_one({"phone_number" : phone_number})
@@ -105,4 +115,3 @@ async def delete_user(phone_number : str):
             detail = "User not found."
         )
     return{"message": f"User with {phone_number} phone number deleted. "}
-
